@@ -5,8 +5,8 @@ from torch.utils.data import random_split
 
 REMOVE_CHARS = '[’#$%"\+@<=>!&,-.?’:;()*\[\]^_`{|}~/\d\t\n\r\x0b\x0c]'
 CHARS = list("abcdefghijklmnopqrstuvwxyz'")
-SOS = '<SOS>'  # start of sequence.
-EOS = '<EOS>'  # end of sequence.
+SOS = '\t'  # start of sequence.
+EOS = '*'  # end of sequence.
 
 char2id = {
     SOS: 0,
@@ -88,9 +88,10 @@ def create_chars_dict(chars, pre_dict=None):
     return pre_dict
 
 
-def token_to_number(token, char_dict):
-    token_num = [char_dict[i] for i in token[0]]
-    token = [char_dict[SOS]] + token_num + [char_dict[EOS]]
+def token_to_number(token, char_dict, max_len):
+    token = list(token[0])
+    token = add_up_to_max_len(token, max_len)
+    token = [char_dict[i] for i in token]
     return token
 
 
@@ -111,17 +112,27 @@ def get_max_token_length(data):
     return len(max(data, key=lambda i: len(i)))
 
 
+def add_up_to_max_len(token, max_len):
+    token = [SOS] + token + [EOS] * (max_len - len(token) - 1)
+    return token
+
+
+def transform(token, max_len, err_rate=np.random.random()):
+    err_token = add_spelling_error(token, err_rate)
+    encoder = token_to_number(err_token, char2id, max_len)
+    decoder = token_to_number(token, char2id, max_len)
+    target = decoder[1:] + [char2id[EOS]]
+    return encoder, decoder, target
+
+
 def preprocess(data):
     data = tokenize(data)
     data = [token.strip().lower() for token in data.split()]
-    # max_len_token = get_max_token_length(data)
+    max_len_token = get_max_token_length(data)
     tokens = []
 
-    for token in iterator(data):
-        err_rate = np.random.random()
-        err_token = add_spelling_error(token, err_rate)
-        token, err_token = token_to_number(token, char2id), token_to_number(err_token, char2id)
-        tokens.append((err_token, token))
+    for token in data:
+        tokens.append(transform(token, max_len_token))
 
     return tokens
 

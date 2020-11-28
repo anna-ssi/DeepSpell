@@ -1,12 +1,16 @@
-# from torch.nn import CrossEntropyLoss
-# from torch.optim import Adam
+import torch
+from torch.nn import CrossEntropyLoss
+from torch.optim import Adam
 from torch.utils.data import DataLoader
+
+from model.encoder import Encoder
 
 
 def collate_fn(batch):
-    data = [item[0] for item in batch]
-    target = [item[1] for item in batch]
-    return data, target
+    encoder = [item[0] for item in batch]
+    decoder = [item[1] for item in batch]
+    target = [item[2] for item in batch]
+    return torch.tensor(encoder), torch.tensor(encoder), torch.tensor(target)
 
 
 def train(train_db, batch_size, device=None, lr=3e-4):
@@ -17,20 +21,22 @@ def train(train_db, batch_size, device=None, lr=3e-4):
         num_workers=8,
         collate_fn=collate_fn
     )
-    # model = RewardPredictor(*train_db.sizes)
-    # criterion = CrossEntropyLoss()
-    # optimizer = Adam(model.parameters(), lr=lr)
+
+    model = Encoder(batch_size, 30, 50, 3, 0.2)
+    criterion = CrossEntropyLoss()
+    optimizer = Adam(model.parameters(), lr=lr)
 
     total_loss = 0
     for batch in train_loader:
-        data, target = batch
-        print(data, target)
+        encoder, decoder, target = batch
+        print(encoder.shape, decoder.shape, target.shape)
+
+        optimizer.zero_grad()
+
+        predictions = model(encoder.to(device))
+        # loss = criterion(predictions, target.to(device))
         break
 
-        # optimizer.zero_grad()
-        #
-        # predictions = model(data.to(device))
-        # loss = criterion(predictions, target.to(device))
         # loss.backward()
         # optimizer.step()
 

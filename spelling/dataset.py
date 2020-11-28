@@ -1,9 +1,10 @@
 from torch.utils.data import Dataset
+from spelling.utils import preprocess
 
 
 class TextDataset(Dataset):
     def __init__(self, tokens):
-        self.tokens = tokens
+        self.tokens = preprocess(tokens)
 
     def __len__(self):
         return len(self.tokens)
