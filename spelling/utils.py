@@ -1,6 +1,7 @@
 import re
 
 import numpy as np
+from torch.utils.data import random_split
 
 REMOVE_CHARS = '[’#$%"\+@<=>!&,-.?’:;()*\[\]^_`{|}~/\d\t\n\r\x0b\x0c]'
 CHARS = list("abcdefghijklmnopqrstuvwxyz'")
@@ -106,18 +107,31 @@ def iterator(data, length=1):
         gen += length
 
 
+def get_max_token_length(data):
+    return len(max(data, key=lambda i: len(i)))
+
+
 def preprocess(data):
     data = tokenize(data)
     data = [token.strip().lower() for token in data.split()]
+    # max_len_token = get_max_token_length(data)
     tokens = []
 
     for token in iterator(data):
         err_rate = np.random.random()
         err_token = add_spelling_error(token, err_rate)
         token, err_token = token_to_number(token, char2id), token_to_number(err_token, char2id)
-        tokens.append((token, err_token))
+        tokens.append((err_token, token))
 
     return tokens
+
+
+def split_data(data, ratio=(7, 2, 1)):
+    assert sum(ratio) == 10
+
+    length = len(data)
+    ratio = [round((length * (i * 10)) / 100) for i in ratio]
+    return random_split(data, ratio)
 
 
 char2id = create_chars_dict(CHARS, char2id)
