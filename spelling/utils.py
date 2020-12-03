@@ -2,6 +2,8 @@ import re
 
 import numpy as np
 from torch.utils.data import random_split
+from torch.utils.data import DataLoader
+import torch
 
 REMOVE_CHARS = '[’#$%"\+@<=>!&,-.?’:;()*\[\]^_`{|}~/\d\t\n\r\x0b\x0c]'
 CHARS = list("abcdefghijklmnopqrstuvwxyz'")
@@ -121,7 +123,7 @@ def transform(token, max_len, err_rate=np.random.random()):
     err_token = add_spelling_error(token, err_rate)
     encoder = token_to_number(err_token, char2id, max_len)
     decoder = token_to_number(token, char2id, max_len)
-    target = decoder[1:] + [char2id[EOS]]
+    target = decoder[1]
     return encoder, decoder, target
 
 
@@ -143,6 +145,31 @@ def split_data(data, ratio=(7, 2, 1)):
     length = len(data)
     ratio = [round((length * (i * 10)) / 100) for i in ratio]
     return random_split(data, ratio)
+
+
+def collate_fn(batch):
+    encoder = [item[0] for item in batch]
+    decoder = [item[1] for item in batch]
+    target = [item[2] for item in batch]
+    return torch.tensor(encoder), torch.tensor(decoder), torch.tensor(target)
+
+
+def loader(data, batch_size):
+    return DataLoader(
+        data,
+        batch_size=batch_size,
+        shuffle=False,
+        num_workers=8,
+        collate_fn=collate_fn,
+        drop_last=True
+    )
+
+
+def epoch_time(start_time, end_time):
+    elapsed_time = end_time - start_time
+    elapsed_mins = int(elapsed_time / 60)
+    elapsed_secs = int(elapsed_time - (elapsed_mins * 60))
+    return elapsed_mins, elapsed_secs
 
 
 char2id = create_chars_dict(CHARS, char2id)

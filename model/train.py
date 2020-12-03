@@ -1,45 +1,29 @@
 import torch
-from torch.nn import CrossEntropyLoss
-from torch.optim import Adam
-from torch.utils.data import DataLoader
-
-from model.encoder import Encoder
 
 
-def collate_fn(batch):
-    encoder = [item[0] for item in batch]
-    decoder = [item[1] for item in batch]
-    target = [item[2] for item in batch]
-    return torch.tensor(encoder), torch.tensor(encoder), torch.tensor(target)
+def count_parameters(model):
+    return sum(p.numel() for p in model.parameters() if p.requires_grad)
 
 
-def train(train_db, batch_size, device=None, lr=3e-4):
-    train_loader = DataLoader(
-        train_db,
-        batch_size=batch_size,
-        shuffle=False,
-        num_workers=8,
-        collate_fn=collate_fn
-    )
+def train(model, iterator, optimizer, criterion, clip):
+    model.train()
 
-    model = Encoder(batch_size, 30, 50, 3, 0.2)
-    criterion = CrossEntropyLoss()
-    optimizer = Adam(model.parameters(), lr=lr)
-
-    total_loss = 0
-    for batch in train_loader:
-        encoder, decoder, target = batch
-        print(encoder.shape, decoder.shape, target.shape)
-
+    epoch_loss = 0
+    count = 0
+    for encoder, decoder, target in iterator:
         optimizer.zero_grad()
+        count += 1
 
-        predictions = model(encoder.to(device))
-        # loss = criterion(predictions, target.to(device))
-        break
+        output = model(encoder, decoder)
 
-        # loss.backward()
-        # optimizer.step()
+        loss = criterion(output.values, target)
 
-        # total_loss += loss.item()
+        loss.backward()
 
-    return total_loss
+        torch.nn.utils.clip_grad_norm_(model.parameters(), clip)
+
+        optimizer.step()
+
+        epoch_loss += loss.item()
+
+    return epoch_loss / len(iterator), count

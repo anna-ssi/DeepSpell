@@ -1,6 +1,8 @@
 from torch.utils.data import Dataset
 from spelling.utils import preprocess
 
+CHARS = list("abcdefghijklmnopqrstuvwxyz'")
+
 
 class TextDataset(Dataset):
     def __init__(self, tokens):
