@@ -1,5 +1,5 @@
 from torch.utils.data import Dataset
-from spelling.utils import preprocess
+from utils.functions import preprocess
 
 CHARS = list("abcdefghijklmnopqrstuvwxyz'")
 

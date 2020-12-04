@@ -1,23 +1,26 @@
+import time
+import argparse
+
+from torch.optim import Adam
+from torch.nn import CrossEntropyLoss
+
+from utils.dataset import *
+from utils.functions import *
+
 from model.train import train
 from model.evaluate import evaluate
-from spelling.dataset import *
-from spelling.utils import *
-
 from model.decoder import Decoder
 from model.encoder import Encoder
 from model.seq2seq import Seq2Seq
-from spelling.utils import CHARS
-from torch.optim import Adam
-from torch.nn import CrossEntropyLoss
-import time
+
 
 file_path = './data/siddhartha.txt'
 text = read_data(file_path)
 td = TextDataset(text)
 train_data, valid_data, test_data = split_data(td)
 
-INPUT_DIM = len(CHARS)
-OUTPUT_DIM = len(CHARS)
+INPUT_DIM = len(char2id)
+OUTPUT_DIM = len(char2id)
 ENC_EMB_DIM = 64
 DEC_EMB_DIM = 64
 HID_DIM = 216
@@ -25,6 +28,17 @@ N_LAYERS = 2
 ENC_DROPOUT = 0.5
 DEC_DROPOUT = 0.5
 BATCH_SIZE = 16
+
+# parser = argparse.ArgumentParser()
+# parser.add_argument('--batch-size', type=int, default=32)
+# parser.add_argument('--enc-emb-dim', type=int, default=64)
+# parser.add_argument('--dec-emb-dim', type=int, default=64)
+# parser.add_argument('--hid-dim', type=int, default=216)
+# parser.add_argument('--n-layers', type=int, default=2)
+# parser.add_argument('--enc-dropout', type=float, default=0.5)
+# parser.add_argument('--dec-dropout', type=float, default=0.5)
+
+# args = parser.parse_args()
 
 enc = Encoder(INPUT_DIM, ENC_EMB_DIM, HID_DIM, N_LAYERS, ENC_DROPOUT)
 dec = Decoder(OUTPUT_DIM, DEC_EMB_DIM, HID_DIM, N_LAYERS, DEC_DROPOUT)
@@ -64,5 +78,7 @@ for epoch in range(N_EPOCHS):
         torch.save(model.state_dict(), 'logs/tut1-model.pt')
 
     print(f'Epoch: {epoch + 1:02} | Time: {epoch_mins}m {epoch_secs}s')
-    print(f'\tTrain Loss: {train_loss:.3f} | Train PPL: {math.exp(train_loss):7.3f}')
-    print(f'\t Val. Loss: {valid_loss:.3f} |  Val. PPL: {math.exp(valid_loss):7.3f}')
+    print(
+        f'\tTrain Loss: {train_loss:.3f} | Train PPL: {math.exp(train_loss):7.3f}')
+    print(
+        f'\t Val. Loss: {valid_loss:.3f} |  Val. PPL: {math.exp(valid_loss):7.3f}')
